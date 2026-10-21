@@ -11,7 +11,7 @@ plugins {
 group = "com.eudistack"
 version = "0.1.0"
 
-val springBootVersion = "3.5.11"
+val springBootVersion = "4.1.1"
 
 java {
     toolchain {
