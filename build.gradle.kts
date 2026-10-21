@@ -46,12 +46,24 @@ dependencies {
     annotationProcessor("org.springframework.boot:spring-boot-autoconfigure-processor")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 
+    // --- Payload serialization (own ObjectMapper: the contract does not follow the producer's settings) ---
+    implementation("com.fasterxml.jackson.core:jackson-databind")
+
+    // --- Optional runtimes: each producer brings its own; the starter never forces one on another ---
+    compileOnly("io.projectreactor:reactor-core")
+    compileOnly("org.springframework:spring-web")
+    compileOnly("jakarta.servlet:jakarta.servlet-api")
+    compileOnly("org.springframework.security:spring-security-core")
+
     // --- DevTools ---
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
 
     // --- Testing ---
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("com.tngtech.archunit:archunit-junit5:1.4.1")
+    testImplementation("com.networknt:json-schema-validator:1.5.6")
+    testImplementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

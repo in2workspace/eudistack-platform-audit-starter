@@ -15,3 +15,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - Propiedades `auditoria.*` de §3.8 con sus valores por defecto, validadas al arrancar cuando algún
     interruptor está activo.
   - Publicación en `mavenLocal`. Decisiones de implementación en `docs/decisions.md`, plan en `docs/tasks.md`.
+  - API para los productores: `AuditFact` (con `details` normalizado y sin nulos), `AuditDraft`
+    (`success` / `denied` / `failure`), `AuditContext`, `AuditActor`, el evento canónico `AuditEvent` (contexto,
+    `source` por defecto y comprobación de tenant EC-08), las interfaces `AuditPublisher` /
+    `ReactiveAuditPublisher` y los puertos `AuditContextResolver`, `ReactiveAuditContextResolver`,
+    `AuditAccessTokenProvider` y `ReactiveAuditAccessTokenProvider`.
+  - `AuditDraftGuard`: rechaza claves de secreto y valores con forma de JWT (RQ-10).
+  - `AuditEventJson`: el payload con la forma de `AuditEventInput`, validado contra el OpenAPI de la API.
