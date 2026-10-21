@@ -1,0 +1,140 @@
+// Outbox starter embedded by the producers of audit events (DT-002). A library, not an application:
+// no Spring Boot plugin, only its BOM, on the Boot version of the producers.
+plugins {
+    `java-library`
+    `maven-publish`
+    jacoco
+    checkstyle
+    id("io.spring.dependency-management") version "1.1.7"
+}
+
+group = "com.eudistack"
+version = "0.1.0"
+
+val springBootVersion = "3.5.11"
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+    withSourcesJar()
+}
+
+jacoco {
+    toolVersion = "0.8.14"
+}
+
+configurations {
+    compileOnly {
+        extendsFrom(configurations.annotationProcessor.get())
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencyManagement {
+    imports {
+        mavenBom("org.springframework.boot:spring-boot-dependencies:$springBootVersion")
+    }
+}
+
+dependencies {
+    // --- Auto-configuration (spring-boot-starter: autoconfigure + SLF4J, already present in every producer) ---
+    api("org.springframework.boot:spring-boot-starter")
+    annotationProcessor("org.springframework.boot:spring-boot-autoconfigure-processor")
+    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
+
+    // --- DevTools ---
+    compileOnly("org.projectlombok:lombok")
+    annotationProcessor("org.projectlombok:lombok")
+
+    // --- Testing ---
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+checkstyle {
+    toolVersion = "10.20.1"
+    configFile = file("config/checkstyle/checkstyle.xml")
+    maxWarnings = 0
+}
+
+tasks.withType<JavaCompile>().configureEach {
+    options.compilerArgs.add("-parameters")
+}
+
+// Unit tests (*Test) run without Docker. Integration tests (*IT) need Testcontainers (PostgreSQL) and run
+// in their own task, which `check` also runs.
+tasks.named<Test>("test") {
+    useJUnitPlatform()
+    exclude("**/*IT.class")
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+val integrationTest = tasks.register<Test>("integrationTest") {
+    description = "Runs the Testcontainers integration tests (*IT)."
+    group = "verification"
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    useJUnitPlatform()
+    include("**/*IT.class")
+    shouldRunAfter(tasks.named("test"))
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+tasks.jacocoTestCoverageVerification {
+    dependsOn(tasks.jacocoTestReport)
+    violationRules {
+        rule {
+            limit {
+                minimum = "0.80".toBigDecimal()
+            }
+        }
+    }
+}
+
+tasks.named("check") {
+    dependsOn(integrationTest, tasks.jacocoTestCoverageVerification)
+}
+
+// Only mavenLocal for now: the remote repository is still open (docs/decisions.md, D-S3).
+publishing {
+    publications {
+        create<MavenPublication>("starter") {
+            from(components["java"])
+            // Dependencies are declared without versions (Boot BOM): publish the resolved ones.
+            versionMapping {
+                usage("java-api") {
+                    fromResolutionOf("runtimeClasspath")
+                }
+                usage("java-runtime") {
+                    fromResolutionResult()
+                }
+            }
+            pom {
+                name = "EUDIStack audit outbox starter"
+                description = "Transactional outbox that delivers audit events to the EUDIStack Audit API."
+                url = "https://github.com/in2workspace/eudistack-platform-audit-starter"
+                licenses {
+                    license {
+                        name = "The Apache License, Version 2.0"
+                        url = "https://www.apache.org/licenses/LICENSE-2.0.txt"
+                    }
+                }
+                scm {
+                    url = "https://github.com/in2workspace/eudistack-platform-audit-starter"
+                    connection = "scm:git:https://github.com/in2workspace/eudistack-platform-audit-starter.git"
+                }
+            }
+        }
+    }
+}
