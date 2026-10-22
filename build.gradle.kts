@@ -82,6 +82,8 @@ dependencies {
     testImplementation("io.projectreactor:reactor-test")
     testRuntimeOnly("org.postgresql:r2dbc-postgresql")
     testImplementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    // Request context: Spring Security as the producers have it
+    testImplementation("org.springframework.security:spring-security-core")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

@@ -35,3 +35,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - Productores JPA: `JpaOutboxStore` con consultas nativas y sin `@Entity`.
   - Selección del store según el productor: reactivo → R2DBC; servlet con JPA → JPA; servlet sin JPA → JDBC
     (EC-14). Los tres stores pasan el mismo test de contrato.
+  - Contexto de auditoría (tenant, organización, actor y `correlation_id`): en una petición lo resuelve el
+    `AuditContextResolver` / `ReactiveAuditContextResolver` del productor, una sola vez y solo cuando se lee,
+    sin depender del orden de los filtros. En procesos sin petición se abre con `AuditContexts.system` o
+    `ReactorAuditContexts.system`, y `withCorrelationId` lo correlaciona con la operación.
