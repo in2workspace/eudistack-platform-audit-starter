@@ -3,8 +3,8 @@ package com.eudistack.auditoria.sql;
 /**
  * The SQL of {@code public.audit_outbox} (DT-002 §3.7.3), shared by the JDBC, R2DBC and JPA adapters (AD-3: one
  * SQL, three runners). Named parameters ({@code :event_id}) and {@code CAST(... AS ...)} rather than {@code ::},
- * which Hibernate would read as a parameter in a native query. Constants, so they can be the value of a JPA
- * {@code @Query}.
+ * which Hibernate would read as a parameter in a native query. Nullable text parameters are cast too, so a null
+ * has a type in every runner. Constants, so they can be the value of a JPA {@code @Query}.
  *
  * <p>Every statement names the table with its schema (EC-13) and takes its time from {@code clock_timestamp()}.
  */
@@ -27,7 +27,8 @@ public final class OutboxSql {
 
     public static final String INSERT = """
             INSERT INTO public.audit_outbox (id, event_id, tenant, event_type, correlation_id, payload, traceparent)
-            VALUES (:id, :event_id, :tenant, :event_type, :correlation_id, CAST(:payload AS jsonb), :traceparent)
+            VALUES (:id, :event_id, :tenant, :event_type, :correlation_id, CAST(:payload AS jsonb),
+                    CAST(:traceparent AS varchar))
             """;
 
     public static final String RECLAIM_EXPIRED = """
@@ -68,7 +69,7 @@ public final class OutboxSql {
                 locked_at = NULL,
                 locked_by = NULL,
                 next_attempt_at = clock_timestamp() + make_interval(secs => :delay_seconds),
-                last_error = :last_error
+                last_error = CAST(:last_error AS varchar)
             WHERE event_id IN (:event_ids)
               AND status = 'IN_FLIGHT'
               AND locked_by = :instance_id
@@ -78,7 +79,7 @@ public final class OutboxSql {
             UPDATE public.audit_outbox
             SET status = 'QUARANTINED',
                 quarantined_at = clock_timestamp(),
-                quarantine_reason = :reason,
+                quarantine_reason = CAST(:reason AS varchar),
                 locked_at = NULL,
                 locked_by = NULL
             WHERE event_id = :event_id

@@ -33,14 +33,6 @@ public abstract class OutboxIntegrationTest {
         jdbc.sql("TRUNCATE public.audit_outbox, sandbox.issuance").update();
     }
 
-    /** Runs {@code work} in a business transaction of tenant {@code sandbox}, its schema on the search_path. */
-    protected void inSandboxTransaction(Consumer<JdbcClient> work) {
-        transaction.executeWithoutResult(status -> {
-            jdbc.sql("SELECT set_config('search_path', 'sandbox', true)").query(String.class).single();
-            work.accept(jdbc);
-        });
-    }
-
     protected static OutboxEntry entry(UUID eventId) {
         return new OutboxEntry(eventId, "sandbox", "IssuanceCompleted", "op-" + eventId,
                 "{\"event_id\": \"" + eventId + "\", \"tenant\": \"sandbox\"}", null);

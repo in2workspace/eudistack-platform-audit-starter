@@ -30,3 +30,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     de las filas de la instancia, con el tiempo del reloj de la base de datos. El SQL (`OutboxSql`) es el que
     usarán también los adaptadores R2DBC y JPA.
   - Tests de integración con PostgreSQL 17 (Testcontainers). La cobertura mínima cuenta las dos suites.
+  - Productores reactivos: puerto `ReactiveOutboxStore` y `R2dbcOutboxStore`, con la tabla creada por R2DBC
+    (`R2dbcAuditOutboxSchema`) para servicios sin `DataSource`.
+  - Productores JPA: `JpaOutboxStore` con consultas nativas y sin `@Entity`.
+  - Selección del store según el productor: reactivo → R2DBC; servlet con JPA → JPA; servlet sin JPA → JDBC
+    (EC-14). Los tres stores pasan el mismo test de contrato.

@@ -55,6 +55,10 @@ dependencies {
     compileOnly("jakarta.servlet:jakarta.servlet-api")
     compileOnly("org.springframework.security:spring-security-core")
     compileOnly("org.springframework:spring-jdbc")
+    compileOnly("org.springframework:spring-r2dbc")
+    compileOnly("io.r2dbc:r2dbc-spi")
+    compileOnly("org.springframework:spring-orm")
+    compileOnly("jakarta.persistence:jakarta.persistence-api")
 
     // --- DevTools ---
     compileOnly("org.projectlombok:lombok")
@@ -72,6 +76,12 @@ dependencies {
     testImplementation("org.testcontainers:junit-jupiter")
     testImplementation("org.testcontainers:postgresql")
     testRuntimeOnly("org.postgresql:postgresql")
+    // Reactive producer (R2DBC) and JPA producer
+    testImplementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
+    testImplementation("org.springframework:spring-webflux")
+    testImplementation("io.projectreactor:reactor-test")
+    testRuntimeOnly("org.postgresql:r2dbc-postgresql")
+    testImplementation("org.springframework.boot:spring-boot-starter-data-jpa")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

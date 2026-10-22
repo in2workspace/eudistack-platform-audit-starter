@@ -5,6 +5,7 @@ import com.eudistack.auditoria.domain.OutboxEntry;
 import com.eudistack.auditoria.domain.OutboxLimits;
 import com.eudistack.auditoria.domain.OutboxStats;
 import com.eudistack.auditoria.port.OutboxStore;
+import com.eudistack.auditoria.sql.OutboxArguments;
 import com.eudistack.auditoria.sql.OutboxSql;
 import org.springframework.jdbc.core.simple.JdbcClient;
 
@@ -46,18 +47,15 @@ public final class JdbcOutboxStore implements OutboxStore {
     @Override
     public int reclaimExpired(Duration lease) {
         return jdbc.sql(OutboxSql.RECLAIM_EXPIRED)
-                .param("lease_seconds", seconds(lease))
+                .param("lease_seconds", OutboxArguments.seconds(lease))
                 .update();
     }
 
     @Override
     public List<ClaimedEvent> claim(int limit, String instanceId) {
-        if (limit < 1 || limit > OutboxLimits.MAX_BATCH_SIZE) {
-            throw new IllegalArgumentException("limit must be between 1 and " + OutboxLimits.MAX_BATCH_SIZE);
-        }
         return jdbc.sql(OutboxSql.CLAIM)
-                .param("limit", limit)
-                .param("instance_id", requireInstance(instanceId))
+                .param("limit", OutboxArguments.limit(limit))
+                .param("instance_id", OutboxArguments.instance(instanceId))
                 .query(JdbcOutboxStore::claimed)
                 .list();
     }
@@ -78,10 +76,10 @@ public final class JdbcOutboxStore implements OutboxStore {
             return 0;
         }
         return jdbc.sql(OutboxSql.RESCHEDULE)
-                .param("delay_seconds", seconds(delay))
+                .param("delay_seconds", OutboxArguments.seconds(delay))
                 .param("last_error", OutboxSql.cut(lastError, OutboxLimits.LAST_ERROR_LENGTH), Types.VARCHAR)
                 .param("event_ids", eventIds)
-                .param("instance_id", requireInstance(instanceId))
+                .param("instance_id", OutboxArguments.instance(instanceId))
                 .update();
     }
 
@@ -90,14 +88,14 @@ public final class JdbcOutboxStore implements OutboxStore {
         return jdbc.sql(OutboxSql.QUARANTINE)
                 .param("reason", OutboxSql.cut(reason, OutboxLimits.QUARANTINE_REASON_LENGTH), Types.VARCHAR)
                 .param("event_id", eventId)
-                .param("instance_id", requireInstance(instanceId))
+                .param("instance_id", OutboxArguments.instance(instanceId))
                 .update() == 1;
     }
 
     @Override
     public int releaseOwned(String instanceId) {
         return jdbc.sql(OutboxSql.RELEASE_OWNED)
-                .param("instance_id", requireInstance(instanceId))
+                .param("instance_id", OutboxArguments.instance(instanceId))
                 .update();
     }
 
@@ -122,17 +120,4 @@ public final class JdbcOutboxStore implements OutboxStore {
                 rs.getInt("attempts"));
     }
 
-    private static double seconds(Duration duration) {
-        if (duration == null || duration.isNegative()) {
-            throw new IllegalArgumentException("duration must be zero or positive");
-        }
-        return duration.toMillis() / 1000.0;
-    }
-
-    private static String requireInstance(String instanceId) {
-        if (instanceId == null || instanceId.isBlank()) {
-            throw new IllegalArgumentException("instanceId is required");
-        }
-        return instanceId;
-    }
 }

@@ -1,2 +1,4 @@
 com.eudistack.auditoria.autoconfigure.AuditOutboxAutoConfiguration
+com.eudistack.auditoria.autoconfigure.AuditOutboxR2dbcAutoConfiguration
+com.eudistack.auditoria.autoconfigure.AuditOutboxJpaAutoConfiguration
 com.eudistack.auditoria.autoconfigure.AuditOutboxJdbcAutoConfiguration

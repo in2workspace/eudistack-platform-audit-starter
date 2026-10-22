@@ -2,13 +2,16 @@ package com.eudistack.auditoria.support;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import io.r2dbc.spi.ConnectionFactories;
+import io.r2dbc.spi.ConnectionFactory;
+import io.r2dbc.spi.ConnectionFactoryOptions;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 import javax.sql.DataSource;
 
 /**
- * One PostgreSQL 17 container for the whole test run, as the producers run it. Started on first use and
- * stopped by Testcontainers when the JVM ends.
+ * One PostgreSQL 17 container for the whole test run, as the producers run it, reachable over JDBC and R2DBC.
+ * Started on first use and stopped by Testcontainers when the JVM ends.
  */
 public final class PostgresTestDatabase {
 
@@ -25,6 +28,19 @@ public final class PostgresTestDatabase {
             dataSource = newDataSource(POSTGRES.getJdbcUrl());
         }
         return dataSource;
+    }
+
+    /** An unpooled R2DBC connection factory on the same database. */
+    public static ConnectionFactory connectionFactory() {
+        dataSource();
+        return ConnectionFactories.get(ConnectionFactoryOptions.builder()
+                .option(ConnectionFactoryOptions.DRIVER, "postgresql")
+                .option(ConnectionFactoryOptions.HOST, POSTGRES.getHost())
+                .option(ConnectionFactoryOptions.PORT, POSTGRES.getMappedPort(PostgreSQLContainer.POSTGRESQL_PORT))
+                .option(ConnectionFactoryOptions.USER, POSTGRES.getUsername())
+                .option(ConnectionFactoryOptions.PASSWORD, POSTGRES.getPassword())
+                .option(ConnectionFactoryOptions.DATABASE, POSTGRES.getDatabaseName())
+                .build());
     }
 
     /**
