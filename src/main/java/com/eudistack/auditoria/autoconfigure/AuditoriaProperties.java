@@ -1,5 +1,6 @@
 package com.eudistack.auditoria.autoconfigure;
 
+import com.eudistack.auditoria.domain.OutboxLimits;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -20,9 +21,6 @@ import java.util.regex.Pattern;
 @Setter
 @ConfigurationProperties(prefix = "auditoria")
 public class AuditoriaProperties implements InitializingBean {
-
-    /** Largest batch of the Audit API contract ({@code EventBatch.maxItems}). Configuration cannot raise it. */
-    public static final int MAX_BATCH_SIZE = 100;
 
     /** Read timeout of the dispatcher's HTTP client (DT-002 §2.4). The lease has to outlast it. */
     public static final Duration HTTP_READ_TIMEOUT = Duration.ofSeconds(2);
@@ -54,8 +52,8 @@ public class AuditoriaProperties implements InitializingBean {
     public static class Dispatcher {
         /** Starts the drain loop that sends the outbox to the Audit API only when true. */
         private boolean enabled;
-        /** Rows claimed and sent per batch. Capped at {@value AuditoriaProperties#MAX_BATCH_SIZE}. */
-        private int batchSize = MAX_BATCH_SIZE;
+        /** Rows claimed and sent per batch. Capped at {@value OutboxLimits#MAX_BATCH_SIZE}, the contract's limit. */
+        private int batchSize = OutboxLimits.MAX_BATCH_SIZE;
         /** Wait between drains while the outbox is empty, unless a post-commit signal arrives first. */
         private Duration pollInterval = Duration.ofSeconds(5);
         /** Age after which an {@code IN_FLIGHT} row of a dead instance goes back to {@code PENDING}. */
@@ -71,7 +69,7 @@ public class AuditoriaProperties implements InitializingBean {
         private Duration quarantineWindow = Duration.ofMinutes(10);
 
         public int getBatchSize() {
-            return Math.min(batchSize, MAX_BATCH_SIZE);
+            return Math.min(batchSize, OutboxLimits.MAX_BATCH_SIZE);
         }
     }
 

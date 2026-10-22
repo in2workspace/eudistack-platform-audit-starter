@@ -22,3 +22,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     `AuditAccessTokenProvider` y `ReactiveAuditAccessTokenProvider`.
   - `AuditDraftGuard`: rechaza claves de secreto y valores con forma de JWT (RQ-10).
   - `AuditEventJson`: el payload con la forma de `AuditEventInput`, validado contra el OpenAPI de la API.
+  - Tabla `public.audit_outbox` (`db/audit-outbox/V1__public_audit_outbox.sql`), creada una sola vez al arrancar
+    por `JdbcAuditOutboxSchema`: no hace nada si ya existe y serializa los arranques simultáneos con un bloqueo
+    de PostgreSQL.
+  - Puerto `OutboxStore` y `JdbcOutboxStore` para productores servlet: insert en la transacción de negocio,
+    reclamación con `FOR UPDATE SKIP LOCKED`, reclaim del lease, borrado, reprogramación, cuarentena y suelta
+    de las filas de la instancia, con el tiempo del reloj de la base de datos. El SQL (`OutboxSql`) es el que
+    usarán también los adaptadores R2DBC y JPA.
+  - Tests de integración con PostgreSQL 17 (Testcontainers). La cobertura mínima cuenta las dos suites.

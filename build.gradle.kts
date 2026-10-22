@@ -54,6 +54,7 @@ dependencies {
     compileOnly("org.springframework:spring-web")
     compileOnly("jakarta.servlet:jakarta.servlet-api")
     compileOnly("org.springframework.security:spring-security-core")
+    compileOnly("org.springframework:spring-jdbc")
 
     // --- DevTools ---
     compileOnly("org.projectlombok:lombok")
@@ -64,6 +65,13 @@ dependencies {
     testImplementation("com.tngtech.archunit:archunit-junit5:1.4.1")
     testImplementation("com.networknt:json-schema-validator:1.5.6")
     testImplementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml")
+    // Servlet producer on PostgreSQL 17, as the producers run it (Testcontainers)
+    testImplementation("org.springframework.boot:spring-boot-starter-jdbc")
+    testImplementation("org.springframework:spring-web")
+    testImplementation("jakarta.servlet:jakarta.servlet-api")
+    testImplementation("org.testcontainers:junit-jupiter")
+    testImplementation("org.testcontainers:postgresql")
+    testRuntimeOnly("org.postgresql:postgresql")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
@@ -82,7 +90,6 @@ tasks.withType<JavaCompile>().configureEach {
 tasks.named<Test>("test") {
     useJUnitPlatform()
     exclude("**/*IT.class")
-    finalizedBy(tasks.jacocoTestReport)
 }
 
 val integrationTest = tasks.register<Test>("integrationTest") {
@@ -95,8 +102,15 @@ val integrationTest = tasks.register<Test>("integrationTest") {
     shouldRunAfter(tasks.named("test"))
 }
 
+// Coverage counts both suites: the adapters are only exercised by the integration tests. The report is not
+// attached to `test`, so `./gradlew test` stays Docker-free.
+val coverageData = fileTree(layout.buildDirectory) {
+    include("jacoco/test.exec", "jacoco/integrationTest.exec")
+}
+
 tasks.jacocoTestReport {
-    dependsOn(tasks.test)
+    dependsOn(tasks.test, integrationTest)
+    executionData.setFrom(coverageData)
     reports {
         xml.required = true
         html.required = true
@@ -105,6 +119,7 @@ tasks.jacocoTestReport {
 
 tasks.jacocoTestCoverageVerification {
     dependsOn(tasks.jacocoTestReport)
+    executionData.setFrom(coverageData)
     violationRules {
         rule {
             limit {
