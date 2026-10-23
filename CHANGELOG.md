@@ -43,3 +43,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     obligatoria; un tenant ajeno, un secreto o la falta de contexto la hacen fallar. El dispatcher recibe una
     señal tras cada commit. Con el publicador apagado, el bean existe y no hace nada, así que el productor
     arranca igual; encendido sin base de datos, el arranque falla con un mensaje claro.
+  - `@AuditUseCase` y `AuditUseCaseOperator` / `ReactiveAuditUseCaseOperator`: el caso de uso prepara sus hechos
+    (`AuditUseCases.prepare`) y el starter los encola con el resultado: `Success`, o el `Denied`/`Failure` que el
+    `AuditOutcomeClassifier` del productor da a su excepción. Solo dentro de la transacción de negocio: un
+    `Denied` cuyo negocio hace rollback se pierde con él y se avisa por log.
