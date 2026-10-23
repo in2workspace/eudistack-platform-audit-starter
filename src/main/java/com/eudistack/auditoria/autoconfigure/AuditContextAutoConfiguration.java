@@ -13,7 +13,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
-import org.springframework.boot.autoconfigure.condition.NoneNestedConditions;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
@@ -59,7 +58,7 @@ public class AuditContextAutoConfiguration {
     }
 
     @Configuration(proxyBeanMethods = false)
-    @Conditional(NotReactiveApplication.class)
+    @Conditional(NotReactiveApplicationCondition.class)
     static class ThreadContext {
 
         @Bean
@@ -82,17 +81,6 @@ public class AuditContextAutoConfiguration {
                 registration.setOrder(Ordered.LOWEST_PRECEDENCE);
                 return registration;
             }
-        }
-    }
-
-    static class NotReactiveApplication extends NoneNestedConditions {
-
-        NotReactiveApplication() {
-            super(ConfigurationPhase.PARSE_CONFIGURATION);
-        }
-
-        @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
-        static class Reactive {
         }
     }
 }

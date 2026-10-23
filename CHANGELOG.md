@@ -39,3 +39,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     `AuditContextResolver` / `ReactiveAuditContextResolver` del productor, una sola vez y solo cuando se lee,
     sin depender del orden de los filtros. En procesos sin petición se abre con `AuditContexts.system` o
     `ReactorAuditContexts.system`, y `withCorrelationId` lo correlaciona con la operación.
+  - `stage` (`AuditPublisher` / `ReactiveAuditPublisher`): encola el evento en la transacción de negocio, que es
+    obligatoria; un tenant ajeno, un secreto o la falta de contexto la hacen fallar. El dispatcher recibe una
+    señal tras cada commit. Con el publicador apagado, el bean existe y no hace nada, así que el productor
+    arranca igual; encendido sin base de datos, el arranque falla con un mensaje claro.
