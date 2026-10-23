@@ -47,3 +47,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     (`AuditUseCases.prepare`) y el starter los encola con el resultado: `Success`, o el `Denied`/`Failure` que el
     `AuditOutcomeClassifier` del productor da a su excepción. Solo dentro de la transacción de negocio: un
     `Denied` cuyo negocio hace rollback se pierde con él y se avisa por log.
+  - Cliente de `POST /api/v1/events` (`RestClient` y `WebClient` sobre el cliente HTTP del JDK): solo las
+    cabeceras explícitas (token M2M, `Content-Type`, `traceparent`), timeouts de 1 s y 2 s, un reintento con token
+    nuevo tras un 401. Nunca lanza: devuelve el resultado de cada evento, el fallo HTTP o la falta de conexión.
+    Solo existe con el dispatcher encendido, y exige el proveedor de token del servicio.

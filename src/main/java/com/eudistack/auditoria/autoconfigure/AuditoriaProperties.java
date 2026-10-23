@@ -1,6 +1,7 @@
 package com.eudistack.auditoria.autoconfigure;
 
 import com.eudistack.auditoria.domain.OutboxLimits;
+import com.eudistack.auditoria.http.AuditApiTimeouts;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -21,9 +22,6 @@ import java.util.regex.Pattern;
 @Setter
 @ConfigurationProperties(prefix = "auditoria")
 public class AuditoriaProperties implements InitializingBean {
-
-    /** Read timeout of the dispatcher's HTTP client (DT-002 §2.4). The lease has to outlast it. */
-    public static final Duration HTTP_READ_TIMEOUT = Duration.ofSeconds(2);
 
     private static final Pattern CATALOG_VERSION = Pattern.compile("^\\d+\\.\\d+\\.\\d+$");
 
@@ -93,8 +91,8 @@ public class AuditoriaProperties implements InitializingBean {
                 "auditoria.catalog-version must be MAJOR.MINOR.PATCH, was '" + catalogVersion + "'");
         require(dispatcher.batchSize >= 1, "auditoria.dispatcher.batch-size must be at least 1");
         require(isPositive(dispatcher.pollInterval), "auditoria.dispatcher.poll-interval must be positive");
-        require(dispatcher.lease != null && dispatcher.lease.compareTo(HTTP_READ_TIMEOUT) > 0,
-                "auditoria.dispatcher.lease must be longer than the HTTP read timeout (" + HTTP_READ_TIMEOUT + ")");
+        require(dispatcher.lease != null && dispatcher.lease.compareTo(AuditApiTimeouts.READ) > 0,
+                "auditoria.dispatcher.lease must be longer than the HTTP read timeout (" + AuditApiTimeouts.READ + ")");
         require(dispatcher.quarantineMaxPerWindow >= 1,
                 "auditoria.dispatcher.quarantine-max-per-window must be at least 1");
         require(isPositive(dispatcher.quarantineWindow), "auditoria.dispatcher.quarantine-window must be positive");

@@ -52,6 +52,7 @@ dependencies {
     // --- Optional runtimes: each producer brings its own; the starter never forces one on another ---
     compileOnly("io.projectreactor:reactor-core")
     compileOnly("org.springframework:spring-web")
+    compileOnly("org.springframework:spring-webflux")
     compileOnly("jakarta.servlet:jakarta.servlet-api")
     compileOnly("org.springframework.security:spring-security-core")
     compileOnly("org.springframework:spring-jdbc")
@@ -84,6 +85,8 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-data-jpa")
     // Request context: Spring Security as the producers have it
     testImplementation("org.springframework.security:spring-security-core")
+    // Audit API stand-in for the HTTP clients
+    testImplementation("org.wiremock:wiremock-standalone:3.13.2")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
