@@ -46,12 +46,47 @@ dependencies {
     annotationProcessor("org.springframework.boot:spring-boot-autoconfigure-processor")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 
+    // --- Payload serialization (own ObjectMapper: the contract does not follow the producer's settings) ---
+    implementation("com.fasterxml.jackson.core:jackson-databind")
+
+    // --- Optional runtimes: each producer brings its own; the starter never forces one on another ---
+    compileOnly("io.projectreactor:reactor-core")
+    compileOnly("org.springframework:spring-web")
+    compileOnly("org.springframework:spring-webflux")
+    compileOnly("jakarta.servlet:jakarta.servlet-api")
+    compileOnly("org.springframework.security:spring-security-core")
+    compileOnly("org.springframework:spring-jdbc")
+    compileOnly("org.springframework:spring-r2dbc")
+    compileOnly("io.r2dbc:r2dbc-spi")
+    compileOnly("org.springframework:spring-orm")
+    compileOnly("jakarta.persistence:jakarta.persistence-api")
+
     // --- DevTools ---
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
 
     // --- Testing ---
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("com.tngtech.archunit:archunit-junit5:1.4.1")
+    testImplementation("com.networknt:json-schema-validator:1.5.6")
+    testImplementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml")
+    // Servlet producer on PostgreSQL 17, as the producers run it (Testcontainers)
+    testImplementation("org.springframework.boot:spring-boot-starter-jdbc")
+    testImplementation("org.springframework:spring-web")
+    testImplementation("jakarta.servlet:jakarta.servlet-api")
+    testImplementation("org.testcontainers:junit-jupiter")
+    testImplementation("org.testcontainers:postgresql")
+    testRuntimeOnly("org.postgresql:postgresql")
+    // Reactive producer (R2DBC) and JPA producer
+    testImplementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
+    testImplementation("org.springframework:spring-webflux")
+    testImplementation("io.projectreactor:reactor-test")
+    testRuntimeOnly("org.postgresql:r2dbc-postgresql")
+    testImplementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    // Request context: Spring Security as the producers have it
+    testImplementation("org.springframework.security:spring-security-core")
+    // Audit API stand-in for the HTTP clients
+    testImplementation("org.wiremock:wiremock-standalone:3.13.2")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
@@ -70,7 +105,6 @@ tasks.withType<JavaCompile>().configureEach {
 tasks.named<Test>("test") {
     useJUnitPlatform()
     exclude("**/*IT.class")
-    finalizedBy(tasks.jacocoTestReport)
 }
 
 val integrationTest = tasks.register<Test>("integrationTest") {
@@ -83,8 +117,15 @@ val integrationTest = tasks.register<Test>("integrationTest") {
     shouldRunAfter(tasks.named("test"))
 }
 
+// Coverage counts both suites: the adapters are only exercised by the integration tests. The report is not
+// attached to `test`, so `./gradlew test` stays Docker-free.
+val coverageData = fileTree(layout.buildDirectory) {
+    include("jacoco/test.exec", "jacoco/integrationTest.exec")
+}
+
 tasks.jacocoTestReport {
-    dependsOn(tasks.test)
+    dependsOn(tasks.test, integrationTest)
+    executionData.setFrom(coverageData)
     reports {
         xml.required = true
         html.required = true
@@ -93,6 +134,7 @@ tasks.jacocoTestReport {
 
 tasks.jacocoTestCoverageVerification {
     dependsOn(tasks.jacocoTestReport)
+    executionData.setFrom(coverageData)
     violationRules {
         rule {
             limit {
